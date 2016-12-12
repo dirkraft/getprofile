@@ -8,6 +8,10 @@ import (
 )
 
 func RunCli() {
+    if err := initialize(); err != nil {
+        panic(err)
+    }
+
     app := cli.NewApp()
     app.Name = "getprofile"
     app.Commands = []cli.Command{

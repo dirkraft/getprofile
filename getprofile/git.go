@@ -8,7 +8,6 @@ import (
     "path/filepath"
     "os"
     "errors"
-    "fmt"
 )
 
 type gitSyncer struct{}
@@ -27,9 +26,7 @@ func (sync *gitSyncer) Supports(repoUrl string) bool {
 func (sync *gitSyncer) Init() error {
     if repoUrl, err := getConfig(); err != nil {
         return err
-    } else if basePath, _, err := getConfigPath(); err != nil {
-        return err
-    } else if _, err := os.Stat(path.Join(basePath, "repo/.git")); os.IsNotExist(err) {
+    } else if _, err := os.Stat(path.Join(repoPath, ".git")); os.IsNotExist(err) {
         return exec.Command("git", "clone", repoUrl, path.Join(basePath, "repo")).Run()
     } else {
         return nil // Already cloned
@@ -37,33 +34,28 @@ func (sync *gitSyncer) Init() error {
 }
 
 func (sync *gitSyncer) Track(absPath string, relPath string) error {
-    if basePath, _, err := getConfigPath(); err != nil {
+    dest := path.Join(repoPath, relPath)
+    if err := os.MkdirAll(path.Dir(dest), 0700); err != nil {
         return err
-    } else {
-        repoPath := path.Join(basePath, "repo")
-        dest := path.Join(repoPath, relPath)
-        if err := os.MkdirAll(path.Dir(dest), 0700); err != nil {
-            return err
-        } else {
-            return exec.Command("cp", absPath, dest).Run()
-        }
     }
+
+    if err := exec.Command("cp", absPath, dest).Run(); err != nil {
+        return err
+    }
+
+    cmd := exec.Command("git", "add", relPath)
+    cmd.Dir = repoPath
+    return cmd.Run()
 }
 
 func (sync *gitSyncer) Untrack(relPath string) error {
-    if basePath, _, err := getConfigPath(); err != nil {
-        return err
-    } else {
-        cmd := exec.Command("git", "rm", "-f", relPath)
-        cmd.Dir = path.Join(basePath, "repo")
-        return cmd.Run()
-    }
+    cmd := exec.Command("git", "rm", "-f", relPath)
+    cmd.Dir = repoPath
+    return cmd.Run()
 }
 
 func (sync *gitSyncer) Out() error {
-    if basePath, _, err := getConfigPath(); err != nil {
-        return err
-    } else if err := filepath.Walk(path.Join(basePath, "repo"), copyToRepo); err != nil {
+    if err := filepath.Walk(repoPath, makeWalkFunc(copyToRepo)); err != nil {
         return err
     } else {
         repoPath := path.Join(basePath, "repo")
@@ -76,7 +68,7 @@ func (sync *gitSyncer) Out() error {
             return nil // No changes
         }
 
-        cmd = exec.Command("git", "add", ".")
+        cmd = exec.Command("git", "add", "-u")
         cmd.Dir = repoPath
         if err := cmd.Run(); err != nil {
             return err
@@ -94,45 +86,44 @@ func (sync *gitSyncer) Out() error {
     }
 }
 
-func copyToRepo(path string, info os.FileInfo, err error) error {
-    if err != nil {
-        return err
+func makeWalkFunc(processor func(homePath string, absPath string, relPath string) error) filepath.WalkFunc {
+    return func(absPath string, info os.FileInfo, err error) error {
+        if err != nil {
+            return err
+        } else if info.IsDir() {
+            return nil
+        } else if relPath, err := filepath.Rel(repoPath, absPath); err != nil {
+            return err
+        } else if !filepath.HasPrefix(relPath, ".git/") {
+            return processor(absPath, relPath)
+        } else {
+            return nil
+        }
     }
-    if (info.IsDir()) {
-        return nil
-    }
-    fmt.Println(path)
-    fmt.Println(info.IsDir())
-    return errors.New("TODO") // TODO
 }
 
 func (sync *gitSyncer) In() error {
-    if basePath, _, err := getConfigPath(); err != nil {
+    prevSha, err := gitSha(repoPath)
+    if err != nil {
         return err
-    } else {
-        repoPath := path.Join(basePath, "repo")
-        prevSha, err := gitSha(repoPath)
-        if err != nil {
-            return err
-        }
-
-        cmd := exec.Command("git", "pull")
-        cmd.Dir = repoPath
-        if err := cmd.Run(); err != nil {
-            return err
-        }
-
-        nowSha, err := gitSha(repoPath)
-        if err != nil {
-            return err
-        }
-
-        if prevSha == nowSha {
-            return nil
-        }
-
-        return filepath.Walk(path.Join(basePath, "repo"), copyToLocal)
     }
+
+    cmd := exec.Command("git", "pull")
+    cmd.Dir = repoPath
+    if err := cmd.Run(); err != nil {
+        return err
+    }
+
+    nowSha, err := gitSha(repoPath)
+    if err != nil {
+        return err
+    }
+
+    if prevSha == nowSha {
+        return nil
+    }
+
+    return filepath.Walk(path.Join(basePath, "repo"), copyToLocal)
 }
 
 func gitSha(repoPath string) (string, error) {
@@ -148,7 +139,11 @@ func gitSha(repoPath string) (string, error) {
     return string(bytes), nil
 }
 
-func copyToLocal(path string, info os.FileInfo, err error) error {
+func copyToRepo(absPath string, relPath string) error {
+    return errors.New("TODO") // TODO
+}
+
+func copyToLocal(absPath string, relPath string) error {
     return errors.New("TODO") // TODO
 }
 
