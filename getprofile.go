@@ -3,7 +3,7 @@
 package main
 
 import (
-    "github.com/dirkraft/get-profile/getprofile"
+    "github.com/dirkraft/getprofile/getprofile"
 )
 
 func main() {
