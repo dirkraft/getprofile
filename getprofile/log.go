@@ -31,7 +31,7 @@ func inf(args ...interface{}) {
     if logLevel > 2 {
         return
     }
-    fmt.Println("[DBG] " + logFormat(args...))
+    fmt.Println("[INF] " + logFormat(args...))
 }
 
 func inff(s string, args ...interface{}) {

@@ -12,7 +12,7 @@ type syncer interface {
     Track(absPath, relPath string) error
     Untrack(relPath string) error
     Out() error
-    In() error
+    In(force bool) error
 }
 
 var syncers = []syncer{
@@ -62,13 +62,13 @@ func Untrack(p string) error {
     }
 }
 
-func Sync() error {
+func Sync(force bool) error {
     if syncer, err := getSyncer(); err != nil {
         return err
     } else if err := syncer.Out(); err != nil {
         return err
     } else {
-        return syncer.In()
+        return syncer.In(force)
     }
 }
 

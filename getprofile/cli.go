@@ -73,13 +73,17 @@ func RunCli() {
                     Name: "watch, w",
                     Usage: "Continuously watch and synchronize changes",
                 },
+                cli.BoolFlag{
+                    Name: "force, f",
+                    Usage: "Copy from repo to local whether or not there is an update",
+                },
             },
             Action: func(ctx *cli.Context) error {
                 if _, err := getConfig(); err != nil {
                     dbg(err)
                     return errors.New("Run 'config' first")
                 } else {
-                    return Sync()
+                    return Sync(ctx.IsSet("force"))
                 }
             },
         },

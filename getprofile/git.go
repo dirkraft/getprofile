@@ -6,7 +6,6 @@ import (
     "path"
     "path/filepath"
     "os"
-    "errors"
     "fmt"
 )
 
@@ -78,7 +77,7 @@ func (sync *gitSyncer) Out() error {
     }
 }
 
-func (sync *gitSyncer) In() error {
+func (sync *gitSyncer) In(force bool) error {
     inf("Copying updates in")
     if prevSha, err := gitSha(); err != nil {
         return err
@@ -86,10 +85,10 @@ func (sync *gitSyncer) In() error {
         return err
     } else if nowSha, err := gitSha(); err != nil {
         return err
-    } else if prevSha == nowSha {
-        return nil
-    } else {
+    } else if force || prevSha != nowSha {
         return filepath.Walk(path.Join(basePath, "repo"), makeWalkFunc(copyToLocal))
+    } else {
+        return nil
     }
 }
 
@@ -125,7 +124,7 @@ func gitSha() (string, error) {
 }
 
 func copyToRepo(absPath, relPath string) error {
-    inf("Copy to repo:", relPath)
+    inf("Checking:", relPath)
     src := path.Join(homePath, relPath)
     dest := path.Join(repoPath, relPath)
     if err := os.MkdirAll(path.Dir(dest), 0700); err != nil {
@@ -138,7 +137,14 @@ func copyToRepo(absPath, relPath string) error {
 }
 
 func copyToLocal(absPath, relPath string) error {
-    inf("Copy to local:", relPath)
-    return errors.New("TODO") // TODO
+    inf("Checking:", relPath)
+    src := absPath
+    dest := path.Join(homePath, relPath)
+    if err := os.MkdirAll(path.Dir(dest), 0700); err != nil {
+        return err
+    }
+
+    dbg("Command: cp", src, dest)
+    return exec.Command("cp", src, dest).Run()
 }
 
