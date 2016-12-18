@@ -106,7 +106,7 @@ func makeWalkFunc(processor func(absPath, relPath string) error) filepath.WalkFu
 }
 
 func gitRepoExec(cmdToks ...string) (string, error) {
-    dbgf("Command: %v", cmdToks)
+    dbgf("Checking: %v", cmdToks)
     cmd := exec.Command(cmdToks[0], cmdToks[1:]...)
     cmd.Dir = repoPath
     if bytes, err := cmd.Output(); err != nil {
@@ -114,10 +114,6 @@ func gitRepoExec(cmdToks ...string) (string, error) {
     } else {
         return string(bytes), nil
     }
-}
-
-func gitSha() (string, error) {
-    return gitRepoExec("git", "rev-parse", "HEAD")
 }
 
 func copyToRepo(absPath, relPath string) error {
@@ -134,7 +130,7 @@ func copyToRepo(absPath, relPath string) error {
 }
 
 func copyToLocal(absPath, relPath string) error {
-    inf("Checking:", relPath)
+    inf("Copying:", relPath)
     src := absPath
     dest := path.Join(homePath, relPath)
     if err := os.MkdirAll(path.Dir(dest), 0700); err != nil {
