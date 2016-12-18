@@ -30,7 +30,7 @@ func RunCli() {
     app.Commands = []cli.Command{
         {
             Name: "config",
-            Usage: "Set up getprofile",
+            Usage: "Set up getprofile.",
             ArgsUsage: "REPOSITORY_URL",
             Description: usageConfigDesc,
             Action: func(ctx *cli.Context) error {
@@ -43,15 +43,8 @@ func RunCli() {
                 }
             },
         }, {
-            Name: "track",
-            Usage: "Track or untrack a file",
-            Flags: []cli.Flag{
-                cli.BoolFlag{
-                    Name: "untrack, u",
-                    Usage: "Stop tracking a tracked file. The file is not deleted from the local machine.",
-                },
-                // TODO recursive, r
-            },
+            Name: "add",
+            Usage: "Track a file.",
             ArgsUsage: "FILE",
             Action: func(ctx *cli.Context) error {
                 if _, err := getConfig(); err != nil {
@@ -59,31 +52,44 @@ func RunCli() {
                     return errors.New("Run 'config' first")
                 } else if file := strings.TrimSpace(ctx.Args().First()); file == "" {
                     return errors.New("FILE is required. See --help")
-                } else if ctx.Bool("delete") {
-                    return Untrack(file)
                 } else {
                     return Track(file)
                 }
             },
         }, {
-            Name: "sync",
-            Usage: "Synchronize profile",
-            Flags: []cli.Flag{
-                cli.BoolFlag{
-                    Name: "watch, w",
-                    Usage: "Continuously watch and synchronize changes",
-                },
-                cli.BoolFlag{
-                    Name: "force, f",
-                    Usage: "Copy from repo to local whether or not there is an update",
-                },
+            Name: "rm",
+            Usage: "Untrack a file. The local copy is not deleted.",
+            ArgsUsage: "FILE",
+            Action: func(ctx *cli.Context) error {
+                if _, err := getConfig(); err != nil {
+                    dbg(err)
+                    return errors.New("Run 'config' first")
+                } else if file := strings.TrimSpace(ctx.Args().First()); file == "" {
+                    return errors.New("FILE is required. See --help")
+                } else {
+                    return Untrack(file)
+                }
             },
+        }, {
+            Name: "push",
+            Usage: "Push profile updates to remote.",
             Action: func(ctx *cli.Context) error {
                 if _, err := getConfig(); err != nil {
                     dbg(err)
                     return errors.New("Run 'config' first")
                 } else {
-                    return Sync(ctx.IsSet("force"))
+                    return Push()
+                }
+            },
+        }, {
+            Name: "pull",
+            Usage: "Pull profile update from remote. Overwrites local files with updates.",
+            Action: func(ctx *cli.Context) error {
+                if _, err := getConfig(); err != nil {
+                    dbg(err)
+                    return errors.New("Run 'config' first")
+                } else {
+                    return Pull()
                 }
             },
         },

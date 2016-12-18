@@ -46,7 +46,7 @@ func (sync *gitSyncer) Untrack(relPath string) error {
     return cmd.Run()
 }
 
-func (sync *gitSyncer) Out() error {
+func (sync *gitSyncer) Push() error {
     inf("Sending updates out")
     if err := filepath.Walk(repoPath, makeWalkFunc(copyToRepo)); err != nil {
         return err
@@ -56,12 +56,15 @@ func (sync *gitSyncer) Out() error {
         dbg("Command:", "git", "diff", "HEAD", "--quiet")
         cmd := exec.Command("git", "diff", "HEAD", "--quiet")
         cmd.Dir = repoPath
-        if err := cmd.Run(); err != nil {
-            if execExitStatus(err, 128) {
-                dbg("New git repo. Will try to continue.")
-            } else {
-                return err
-            }
+        if err := cmd.Run(); err == nil {
+            dbg("No changes to push.")
+            return nil
+        } else if execExitStatus(err, 1) {
+            dbg("Changes to push. Continuing.")
+        } else if execExitStatus(err, 128) {
+            dbg("New git repo. Will try to continue.")
+        } else {
+            return err
         }
 
         if cmd.ProcessState.Success() {
@@ -77,18 +80,12 @@ func (sync *gitSyncer) Out() error {
     }
 }
 
-func (sync *gitSyncer) In(force bool) error {
+func (sync *gitSyncer) Pull() error {
     inf("Copying updates in")
-    if prevSha, err := gitSha(); err != nil {
+    if _, err := gitRepoExec("git", "pull"); err != nil {
         return err
-    } else if _, err := gitRepoExec("git", "pull"); err != nil {
-        return err
-    } else if nowSha, err := gitSha(); err != nil {
-        return err
-    } else if force || prevSha != nowSha {
-        return filepath.Walk(path.Join(basePath, "repo"), makeWalkFunc(copyToLocal))
     } else {
-        return nil
+        return filepath.Walk(path.Join(basePath, "repo"), makeWalkFunc(copyToLocal))
     }
 }
 
