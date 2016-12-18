@@ -7,6 +7,7 @@ import (
     "path/filepath"
     "os"
     "errors"
+    "fmt"
 )
 
 type gitSyncer struct{}
@@ -131,8 +132,9 @@ func copyToRepo(absPath, relPath string) error {
         return err
     }
 
-    dbg("Command: cp", src, dest)
-    return exec.Command("cp", src, dest).Run()
+    cmd := fmt.Sprintf("[ -e '%v' ] && cp '%v' '%v'", src, src, dest)
+    dbg("Command:", cmd)
+    return exec.Command("bash", "-c", cmd).Run()
 }
 
 func copyToLocal(absPath, relPath string) error {
