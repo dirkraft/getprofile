@@ -132,7 +132,7 @@ func copyToRepo(absPath, relPath string) error {
         return err
     }
 
-    cmd := fmt.Sprintf("[ -e '%v' ] && cp '%v' '%v'", src, src, dest)
+    cmd := fmt.Sprintf("[ -e '%v' ] && cp '%v' '%v' || exit 0", src, src, dest)
     dbg("Command:", cmd)
     return exec.Command("bash", "-c", cmd).Run()
 }
