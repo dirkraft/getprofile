@@ -5,7 +5,7 @@ import (
     "strings"
 )
 
-var logLevel = 1
+var logLevel = 2
 
 func logFormat(args ...interface{}) string {
     s := make([]string, len(args))

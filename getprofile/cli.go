@@ -14,6 +14,19 @@ func RunCli() {
 
     app := cli.NewApp()
     app.Name = "getprofile"
+    app.Version = "0.0.1"
+    app.Flags = []cli.Flag{
+        cli.BoolFlag{
+            Name:"verbose",
+            Usage: "Show verbose logging",
+        },
+    }
+    app.Before = func(ctx *cli.Context) error {
+        if ctx.IsSet("verbose") {
+            logLevel = 1
+        }
+        return nil
+    }
     app.Commands = []cli.Command{
         {
             Name: "config",
@@ -41,7 +54,10 @@ func RunCli() {
             },
             ArgsUsage: "FILE",
             Action: func(ctx *cli.Context) error {
-                if file := strings.TrimSpace(ctx.Args().First()); file == "" {
+                if _, err := getConfig(); err != nil {
+                    dbg(err)
+                    return errors.New("Run 'config' first")
+                } else if file := strings.TrimSpace(ctx.Args().First()); file == "" {
                     return errors.New("FILE is required. See --help")
                 } else if ctx.Bool("delete") {
                     return Untrack(file)
@@ -59,7 +75,12 @@ func RunCli() {
                 },
             },
             Action: func(ctx *cli.Context) error {
-                return Sync()
+                if _, err := getConfig(); err != nil {
+                    dbg(err)
+                    return errors.New("Run 'config' first")
+                } else {
+                    return Sync()
+                }
             },
         },
     }
