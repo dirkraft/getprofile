@@ -37,24 +37,15 @@ For Linux, installation might look like this:
 
 getprofile currently stores tracked files via any git repo that can
 be addressed in the form`<user>@<host>:<repo>`,
-e.g. `git@github.com:dirkraft/profile`.
+e.g. `git@github.com:dirkraft/stuff`.
 
 Currently, only an SSH-accessible git repos are supported (it doesn't
 have to be on GitHub!). If you plan to synchronize files with sensitive
 information like keys, be sure that the repository is **private**.
 
-    $ getprofile config --help
-    NAME:
-       getprofile config - Set up getprofile
+On every machine I want to synchronize with these files, example:
 
-    USAGE:
-       getprofile config REPOSITORY_URL
-
-    DESCRIPTION:
-
-    Set where the profile repository is located. Supported formats:
-
-        git-compatible names: e.g. git@github.com:user/repo
+    getprofile config git@github.com:dirkraft/stuff
 
 ### Use getprofile
 
