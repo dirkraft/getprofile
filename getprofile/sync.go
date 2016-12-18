@@ -9,7 +9,7 @@ import (
 type syncer interface {
     Supports(string) bool
     Init() error
-    Track(absPath string, relPath string) error
+    Track(absPath, relPath string) error
     Untrack(relPath string) error
     Out() error
     In() error

@@ -22,7 +22,7 @@ func RunCli() {
             Description: usageConfigDesc,
             Action: func(ctx *cli.Context) error {
                 if repoUrl := strings.TrimSpace(ctx.Args().First()); repoUrl == "" {
-                    return errors.New("REPOSITORY_URL is required")
+                    return errors.New("REPOSITORY_URL is required. See --help")
                 } else if err := setConfig(repoUrl); err != nil {
                     return err
                 } else {
@@ -42,7 +42,7 @@ func RunCli() {
             ArgsUsage: "FILE",
             Action: func(ctx *cli.Context) error {
                 if file := strings.TrimSpace(ctx.Args().First()); file == "" {
-                    return errors.New("FILE is required")
+                    return errors.New("FILE is required. See --help")
                 } else if ctx.Bool("delete") {
                     return Untrack(file)
                 } else {

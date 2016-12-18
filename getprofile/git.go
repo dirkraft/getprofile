@@ -2,7 +2,6 @@ package getprofile
 
 import (
     "regexp"
-    "log"
     "os/exec"
     "path"
     "path/filepath"
@@ -16,7 +15,7 @@ var gitSyncerInstance *gitSyncer = &gitSyncer{}
 
 func (sync *gitSyncer) Supports(repoUrl string) bool {
     if matched, err := regexp.MatchString(".+@.+:.+", repoUrl); err != nil {
-        log.Printf("Error checking gitSyncer.Supports(%v)", repoUrl)
+        dbgf("Error checking gitSyncer.Supports(%v)", repoUrl)
         return false
     } else {
         return matched
@@ -33,15 +32,8 @@ func (sync *gitSyncer) Init() error {
     }
 }
 
-func (sync *gitSyncer) Track(absPath string, relPath string) error {
-    dest := path.Join(repoPath, relPath)
-    if err := os.MkdirAll(path.Dir(dest), 0700); err != nil {
-        return err
-    }
-
-    if err := exec.Command("cp", absPath, dest).Run(); err != nil {
-        return err
-    }
+func (sync *gitSyncer) Track(absPath, relPath string) error {
+    copyToRepo(absPath, relPath)
 
     cmd := exec.Command("git", "add", relPath)
     cmd.Dir = repoPath
@@ -55,38 +47,52 @@ func (sync *gitSyncer) Untrack(relPath string) error {
 }
 
 func (sync *gitSyncer) Out() error {
+    inf("Sending updates out")
     if err := filepath.Walk(repoPath, makeWalkFunc(copyToRepo)); err != nil {
         return err
     } else {
         repoPath := path.Join(basePath, "repo")
 
+        dbg("Command:", "git", "diff", "HEAD", "--quiet")
         cmd := exec.Command("git", "diff", "HEAD", "--quiet")
         cmd.Dir = repoPath
         if err := cmd.Run(); err != nil {
-            return err
-        } else if cmd.ProcessState.Success() {
+            if execExitStatus(err, 128) {
+                dbg("New git repo. Will try to continue.")
+            } else {
+                return err
+            }
+        }
+
+        if cmd.ProcessState.Success() {
             return nil // No changes
-        }
-
-        cmd = exec.Command("git", "add", "-u")
-        cmd.Dir = repoPath
-        if err := cmd.Run(); err != nil {
+        } else if _, err := gitRepoExec("git", "add", "-u"); err != nil {
+            return err
+        } else if _, err := gitRepoExec("git", "commit", "-m", "auto-commit"); err != nil {
+            return err
+        } else {
+            _, err = gitRepoExec("git", "push")
             return err
         }
-
-        cmd = exec.Command("git", "commit", "-m", "auto-commit")
-        cmd.Dir = repoPath
-        if err := cmd.Run(); err != nil {
-            return err
-        }
-
-        cmd = exec.Command("git", "push")
-        cmd.Dir = repoPath
-        return cmd.Run()
     }
 }
 
-func makeWalkFunc(processor func(homePath string, absPath string, relPath string) error) filepath.WalkFunc {
+func (sync *gitSyncer) In() error {
+    inf("Copying updates in")
+    if prevSha, err := gitSha(); err != nil {
+        return err
+    } else if _, err := gitRepoExec("git", "pull"); err != nil {
+        return err
+    } else if nowSha, err := gitSha(); err != nil {
+        return err
+    } else if prevSha == nowSha {
+        return nil
+    } else {
+        return filepath.Walk(path.Join(basePath, "repo"), makeWalkFunc(copyToLocal))
+    }
+}
+
+func makeWalkFunc(processor func(absPath, relPath string) error) filepath.WalkFunc {
     return func(absPath string, info os.FileInfo, err error) error {
         if err != nil {
             return err
@@ -102,48 +108,35 @@ func makeWalkFunc(processor func(homePath string, absPath string, relPath string
     }
 }
 
-func (sync *gitSyncer) In() error {
-    prevSha, err := gitSha(repoPath)
-    if err != nil {
-        return err
-    }
-
-    cmd := exec.Command("git", "pull")
+func gitRepoExec(cmdToks ...string) (string, error) {
+    dbgf("Command: %v", cmdToks)
+    cmd := exec.Command(cmdToks[0], cmdToks[1:]...)
     cmd.Dir = repoPath
-    if err := cmd.Run(); err != nil {
+    if bytes, err := cmd.Output(); err != nil {
+        return string(bytes), err
+    } else {
+        return string(bytes), nil
+    }
+}
+
+func gitSha() (string, error) {
+    return gitRepoExec("git", "rev-parse", "HEAD")
+}
+
+func copyToRepo(absPath, relPath string) error {
+    inf("Copy to repo:", relPath)
+    src := path.Join(homePath, relPath)
+    dest := path.Join(repoPath, relPath)
+    if err := os.MkdirAll(path.Dir(dest), 0700); err != nil {
         return err
     }
 
-    nowSha, err := gitSha(repoPath)
-    if err != nil {
-        return err
-    }
-
-    if prevSha == nowSha {
-        return nil
-    }
-
-    return filepath.Walk(path.Join(basePath, "repo"), copyToLocal)
+    dbg("Command: cp", src, dest)
+    return exec.Command("cp", src, dest).Run()
 }
 
-func gitSha(repoPath string) (string, error) {
-    cmd := exec.Command("git", "rev-parse", "HEAD")
-    cmd.Dir = repoPath
-    if err := cmd.Run(); err != nil {
-        return "", err
-    }
-    bytes, err := cmd.Output()
-    if err != nil {
-        return "", err
-    }
-    return string(bytes), nil
-}
-
-func copyToRepo(absPath string, relPath string) error {
-    return errors.New("TODO") // TODO
-}
-
-func copyToLocal(absPath string, relPath string) error {
+func copyToLocal(absPath, relPath string) error {
+    inf("Copy to local:", relPath)
     return errors.New("TODO") // TODO
 }
 
