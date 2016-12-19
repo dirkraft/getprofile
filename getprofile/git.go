@@ -80,12 +80,18 @@ func (sync *gitSyncer) Push() error {
     }
 }
 
-func (sync *gitSyncer) Pull() error {
+func (sync *gitSyncer) Pull(force bool) error {
     inf("Copying updates in")
-    if _, err := gitRepoExec("git", "pull"); err != nil {
+    if prevSha, err := gitSha(); err != nil {
         return err
-    } else {
+    } else if _, err := gitRepoExec("git", "pull"); err != nil {
+        return err
+    } else if nowSha, err := gitSha(); err != nil {
+        return err
+    } else if force || prevSha != nowSha {
         return filepath.Walk(path.Join(basePath, "repo"), makeWalkFunc(copyToLocal))
+    } else {
+        return nil
     }
 }
 
@@ -114,6 +120,10 @@ func gitRepoExec(cmdToks ...string) (string, error) {
     } else {
         return string(bytes), nil
     }
+}
+
+func gitSha() (string, error) {
+    return gitRepoExec("git", "rev-parse", "HEAD")
 }
 
 func copyToRepo(absPath, relPath string) error {

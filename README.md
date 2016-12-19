@@ -67,6 +67,14 @@ To untrack files without deleting the local copy
 
     getprofile rm FILE
 
+### Troubleshooting
+
+getprofile's work directory is `~/.getprofile/`. There you can find
+the config and repo. If it is a git repo, you can see what's going on
+there. There's really not much to this tool but its conveniences for
+the usual cases. For all other cases, you're just gonna have to figure
+it out.
+
 ### What getprofile does not do well
 
   - Concurrent changes. Conflicting updates will simply overwrite each

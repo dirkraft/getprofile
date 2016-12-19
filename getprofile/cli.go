@@ -83,13 +83,19 @@ func RunCli() {
             },
         }, {
             Name: "pull",
-            Usage: "Pull profile update from remote. Overwrites local files with updates.",
-            Action: func(ctx *cli.Context) error {
+            Usage: "Pull profile update from remote. Overwrites local files with updates. " +
+                "Does nothing if there is no remote update.",
+            Flags: []cli.Flag{
+                cli.BoolFlag{
+                    Name: "force, f",
+                    Usage: "Copy from repo to local whether or not there is an update",
+                },
+            },            Action: func(ctx *cli.Context) error {
                 if _, err := getConfig(); err != nil {
                     dbg(err)
                     return errors.New("Run 'config' first")
                 } else {
-                    return Pull()
+                    return Pull(ctx.IsSet("force"))
                 }
             },
         },

@@ -12,7 +12,7 @@ type syncer interface {
     Track(absPath, relPath string) error
     Untrack(relPath string) error
     Push() error
-    Pull() error
+    Pull(force bool) error
 }
 
 var syncers = []syncer{
@@ -70,11 +70,11 @@ func Push() error {
     }
 }
 
-func Pull() error {
+func Pull(force bool) error {
     if syncer, err := getSyncer(); err != nil {
         return err
     } else {
-        return syncer.Pull()
+        return syncer.Pull(force)
     }
 }
 
