@@ -91,6 +91,7 @@ func (sync *gitSyncer) Pull(force bool) error {
     } else if force || prevSha != nowSha {
         return filepath.Walk(path.Join(basePath, "repo"), makeWalkFunc(copyToLocal))
     } else {
+        inf("No updates. Use --force to overwrite local files anyways.")
         return nil
     }
 }

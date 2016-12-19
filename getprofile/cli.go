@@ -14,7 +14,7 @@ func RunCli() {
 
     app := cli.NewApp()
     app.Name = "getprofile"
-    app.Version = "0.0.1"
+    app.Version = "0.0.1-dev"
     app.Flags = []cli.Flag{
         cli.BoolFlag{
             Name:"verbose",
