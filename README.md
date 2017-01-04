@@ -79,8 +79,8 @@ it out.
 
   - Concurrent changes. Conflicting updates will simply overwrite each
     other. If you are working from multiple environments and modifying
-    tracked files on each, be careful about the order of `getprofile
-    sync`s.
+    tracked files on each, be careful about the order and intermixing
+    of push/pull between machines.
 
 ### How I use getprofile
 
