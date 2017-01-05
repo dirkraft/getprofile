@@ -90,7 +90,8 @@ func RunCli() {
                     Name: "force, f",
                     Usage: "Copy from repo to local whether or not there is an update",
                 },
-            },            Action: func(ctx *cli.Context) error {
+            },
+            Action: func(ctx *cli.Context) error {
                 if _, err := getConfig(); err != nil {
                     dbg(err)
                     return errors.New("Run 'config' first")

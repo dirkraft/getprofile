@@ -26,7 +26,9 @@ func (sync *gitSyncer) Init() error {
     if repoUrl, err := getConfig(); err != nil {
         return err
     } else if _, err := os.Stat(path.Join(repoPath, ".git")); os.IsNotExist(err) {
-        return exec.Command("git", "clone", repoUrl, path.Join(basePath, "repo")).Run()
+        dest := path.Join(basePath, "repo")
+        dbgf("Cloning %v to %v", repoUrl, dest)
+        return execWithDebug("git", "clone", repoUrl, dest)
     } else {
         return nil // Already cloned
     }
@@ -135,9 +137,10 @@ func copyToRepo(absPath, relPath string) error {
         return err
     }
 
+    // TODO replace with go code. Don't require bash, cp, [
     cmd := fmt.Sprintf("[ -e '%v' ] && cp '%v' '%v' || exit 0", src, src, dest)
     dbg("Command:", cmd)
-    return exec.Command("bash", "-c", cmd).Run()
+    return execWithDebug("bash", "-c", cmd)
 }
 
 func copyToLocal(absPath, relPath string) error {

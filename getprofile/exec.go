@@ -5,6 +5,12 @@ import (
     "syscall"
 )
 
+func execWithDebug(name string, arg ...string) error {
+    out, err := exec.Command(name, arg...).CombinedOutput()
+    dbgf("%s", out)
+    return err
+}
+
 func execExitStatus(err error, status int) bool {
     if exitErr, ok := err.(*exec.ExitError); ok {
         exit := exitErr.Sys().(syscall.WaitStatus).ExitStatus()

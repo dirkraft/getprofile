@@ -21,5 +21,10 @@ func initialize() error {
         repoPath = path.Join(basePath, "repo")
     }
 
+    dbg("homePath:%v", homePath)
+    dbg("basePath:%v", basePath)
+    dbg("configPath:%v", configPath)
+    dbg("repoPath:%v", repoPath)
+
     return os.MkdirAll(basePath, 0700)
 }
