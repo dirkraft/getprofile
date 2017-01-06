@@ -6,6 +6,7 @@ import (
 )
 
 func execWithDebug(name string, arg ...string) error {
+    dbgf("Command: %v % v", name, arg)
     out, err := exec.Command(name, arg...).CombinedOutput()
     dbgf("%s", out)
     return err

@@ -12,4 +12,4 @@ curl --silent \
   --header "Authorization: token ${GITHUB_TOKEN}" \
   --header "Content-Type: application/octet-stream" \
   "${upload_url}?name=${asset_name}" \
-  --data-binary "@${asset_file}" | jq .
+  --data-binary "@${asset_file}" | jq .url

@@ -6,7 +6,6 @@ import (
     "path"
     "path/filepath"
     "os"
-    "fmt"
 )
 
 type gitSyncer struct{}
@@ -59,7 +58,7 @@ func (sync *gitSyncer) Push() error {
         cmd := exec.Command("git", "diff", "HEAD", "--quiet")
         cmd.Dir = repoPath
         if err := cmd.Run(); err == nil {
-            dbg("No changes to push.")
+            inf("No changes to push.")
             return nil
         } else if execExitStatus(err, 1) {
             dbg("Changes to push. Continuing.")
@@ -106,7 +105,7 @@ func makeWalkFunc(processor func(absPath, relPath string) error) filepath.WalkFu
             return nil
         } else if relPath, err := filepath.Rel(repoPath, absPath); err != nil {
             return err
-        } else if !filepath.HasPrefix(relPath, ".git/") {
+        } else if !filepath.HasPrefix(relPath, ".git") {
             return processor(absPath, relPath)
         } else {
             return nil
@@ -130,17 +129,17 @@ func gitSha() (string, error) {
 }
 
 func copyToRepo(absPath, relPath string) error {
-    inf("Checking:", relPath)
+    dbgf("Checking:", relPath)
     src := path.Join(homePath, relPath)
     dest := path.Join(repoPath, relPath)
     if err := os.MkdirAll(path.Dir(dest), 0700); err != nil {
         return err
+    } else if _, err := os.Stat(src); os.IsNotExist(err) {
+        return nil
+    } else {
+        dbgf("Copying %v to %v", src, dest)
+        return err2(cp.Single(dest, src))
     }
-
-    // TODO replace with go code. Don't require bash, cp, [
-    cmd := fmt.Sprintf("[ -e '%v' ] && cp '%v' '%v' || exit 0", src, src, dest)
-    dbg("Command:", cmd)
-    return execWithDebug("bash", "-c", cmd)
 }
 
 func copyToLocal(absPath, relPath string) error {
@@ -149,9 +148,8 @@ func copyToLocal(absPath, relPath string) error {
     dest := path.Join(homePath, relPath)
     if err := os.MkdirAll(path.Dir(dest), 0700); err != nil {
         return err
+    } else {
+        return err2(cp.Single(dest, src))
     }
-
-    dbg("Command: cp", src, dest)
-    return exec.Command("cp", src, dest).Run()
 }
 
