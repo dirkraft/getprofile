@@ -87,9 +87,9 @@ it out.
 I track .vimrc because I want it identical on all environments without
 exception.
 
-I do not track .bashrc or .bash_profile since these aren't consistently
-integrated between OSX and different Linux distros. Instead I have the
-following tracked by getprofile in my own scripts folder.
+I do not track .bashrc or .bash_profile since these can't be identical
+across machines. Instead I have the following tracked by getprofile 
+in my own scripts folder.
 
     $ tree ~/.dirkraftrc/
     /home/dirkraft/.dirkraftrc/
@@ -106,13 +106,11 @@ Here is source_all.sh
 
     for f in ~/.dirkraftrc/sources/*; do source $f; done
 
-Then on each machine I add to whatever .bash_* that makes sense
+Then on each machine's .bashrc/.bash_profile I include the sources
+that makes sense, e.g.
 
     . ~/.dirkraftrc/source_all.sh
-
-If certain scripts can't be sourced on a machine, I'm still able to
-take advantage of `getprofile sync` and selectively source whichever
-scripts I like.
+    . ~/.dirkraftrc/source_osx.sh
 
 ### Future ideas
 
@@ -122,6 +120,8 @@ scripts I like.
   - Periodically pull updates when the user is idle, and we are
     relatively sure that they are not currently editing any profile
     files.
+  - Transparently encrypt secrets in and out of git. So the sensitive stuff
+    in the repo is secured by more than where the git repo lives (e.g. GitHub).
 
 ### Development
 
